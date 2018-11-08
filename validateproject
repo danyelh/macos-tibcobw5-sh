@@ -1,0 +1,80 @@
+TIB_HOME=/Applications/tibco
+RV_HOME=/Applications/tibco/tibrv/8.4
+TIB_JAVA_HOME=/Applications/tibco/jre1.7.0_79.jre/Contents/Home/bin/
+TPCL_HOME=/Applications/tibco/tpcl/5.8
+DESIGNER_HOME=/Applications/tibco/designer/5.8
+TRA_HOME=/Applications/tibco/tra/5.8
+HAWK_HOME=/Applications/tibco/hawk/4.9
+BW_HOME=/Applications/tibco/bw/5.11
+TRA_APPEND_VERSION=5.8
+
+while :; do
+        case $1 in
+           -h) 
+				h_out="-h"
+            ;;
+        	-u)
+               	u_out="-u"
+            ;;
+           -a)
+               if [ -n "$2" ]; then
+                	a_out="-a $2"
+                  	shift
+               else
+                   printf 'ERROR: "-a" requires a non-empty option argument.\n' >&2
+                   exit 1
+               fi
+        	;;
+        	-propFile|--propFile)
+            	if [ -f "$2" ]; then
+                  	shift
+               else
+                   printf 'ERROR: "-propFile" requires a non-empty file argument.\n' >&2
+                   exit 1
+               fi
+            ;;
+            ?*)
+        		if [ -d "$1" ]; then
+                	p_out=$1
+                  	shift
+               else
+                   printf 'ERROR: requires a non-empty directory argument.\n' >&2
+                   exit 1
+               fi
+        	;;
+           --)              # End of all options.
+               shift
+               break
+        	;;
+           -?*)
+               printf 'WARN: Unknown option (ignored): %s\n' "$1" >&2
+            ;;
+           *)
+               break
+       esac
+       shift
+done
+
+
+## this will be prepended to tibco.class.path.extended
+CUSTOM_CP_EXT=$BW_HOME/hotfix/lib/*:$TRA_HOME/lib/TIBCOjms.jar:$TPCL_HOME/lib/mail.jar:$TRA_HOME/lib/TIBCrypt.jar:$TPCL_HOME/lib/httpclient_3.0/*:$HAWK_HOME/lib/*:$BW_HOME/lib/*:$BW_HOME/lib/palettes/*:$TPCL_HOME/uddi4j/lib/uddi4j.jar/*:/Applications/tibco/bw/plugins/lib/*:/Applications/tibco/bw/plugins/lib/palettes/*
+
+## this will be prepended to java.property.palettePath
+CUSTOM_PALETTE_PATH=$BW_HOME/lib/palettes/:/Applications/tibco/bw/plugins/lib/palettes/
+
+# Set CLASS PATH
+STD_CP_EXT=$TPCL_HOME/jviews/6.0/*:$TRA_HOME/hotfix/lib/*:$TRA_HOME/lib/*:$TRA_HOME/lib/palettes/*:$TRA_HOME/hotfix/icjava/6.2/lib/*:$TRA_HOME/icjava/6.2/lib/*:$TRA_HOME/lib/install/*:$RV_HOME/lib/tibrvnativesd.jar:$RV_HOME/lib/tibrvnative.jar:$TPCL_HOME/jdbc/*:$TPCL_HOME/tomcat/7/bin/*:$TPCL_HOME/tomcat/7/lib/*:$TPCL_HOME/tomcat/bin/*:$TPCL_HOME/tomcat/common/lib/*:$TPCL_HOME/tomcat/server/lib/*:$TPCL_HOME/lib/*:/Applications/tibco/tibcojre64/1.7.0/lib/tools.jar:$TRA_HOME/lib/repository_mappers/*:$HAWK_HOME/lib/activation.jar:$TPCL_HOME/lib/entrust/*:$TPCL_HOME/tomcat/7/bin/*
+ 
+# Set PALETTE PATH
+STD_PALETTE_PATH=$TRA_HOME/hotfix/lib/palettes:$TRA_HOME/lib/palettes
+
+
+JAVA_HEAP_SIZE=1024m
+
+TIBCO_PALETTE_PATH=$CUSTOM_PALETTE_PATH:$STD_PALETTE_PATH
+
+TIBCO_EXTENDED_CLASSPATH=$CUSTOM_CP_EXT:$STD_CP_EXT
+
+export DYLD_LIBRARY_PATH=$TPCL_HOME/lib/httpclient_3.0:$HAWK_HOME/bin:$RV_HOME/lib/64:$TRA_HOME/hotfix/lib:$TRA_HOME/lib:$TRA_HOME/hotfix/icjava/6.2/lib:$TRA_HOME/icjava/6.2/lib:$TPCL_HOME/lib:$RV_HOME/lib:$DYLD_LIBRARY_PATH
+
+$TIB_JAVA_HOME/java -Djava.library.path=$RV_HOME/lib -Duser.dir=$DESIGNER_HOME -DTIBCO_HOME=$TIB_HOME -DTIBCO_TRA_VERSION=$TRA_APPEND_VERSION -DpalettePath=$TIBCO_PALETTE_PATH -Xmx$JAVA_HEAP_SIZE -cp $TIBCO_EXTENDED_CLASSPATH com.tibco.ae.tools.designer.cmdline.ValidateProject $h_out $u_out $a_out $p_out
